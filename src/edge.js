@@ -2,12 +2,17 @@ import { mkdir, access } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { activePort, edgeProcesses, exists, findEdge, processFlag, matchingProcesses, selectProfile } from './platform.js';
+import { activePort, edgeProcesses, findEdge, processFlag, matchingProcesses, selectProfile } from './platform.js';
 import { localUrl, portAvailable, verifyCdp } from './cdp.js';
+import { inspectDaily, dailyMessage } from './daily.js';
 
-export const PRIVACY_NOTICE = '[edge-connect-mcp] SECURITY: Connecting to Edge gives the AI agent access to pages, cookies, signed-in sessions, extensions and other sensitive information in that browser. Use only trusted MCP clients. --isolated uses a separate persistent profile. CDP has no authentication; never expose or forward its port. / 安全提示：AI 可访问浏览器页面、Cookie、登录会话及敏感信息；可用 --isolated 隔离。';
+export const PRIVACY_NOTICE = '[edge-connect-mcp] SECURITY: Connecting to Edge gives the AI agent access to pages, cookies, signed-in sessions, extensions and other sensitive information in that browser. Use only trusted MCP clients. Daily mode uses browser-approved attach; --isolated uses a separate persistent profile. Never expose or forward debugging ports. / 安全提示：AI 可访问浏览器页面、Cookie、登录会话及敏感信息；可用 --isolated 隔离。';
 
-export async function inspectEdge(options) {
+export async function inspectEdge(options, { signal } = {}) {
+  if (options.wsEndpoint) {
+    const wsEndpoint = localUrl(options.wsEndpoint, true).href;
+    return { profile: undefined, processes: [], candidates: [], warnings: [], wsEndpoint };
+  }
   if (options.browserUrl) {
     const url = localUrl(options.browserUrl).origin;
     return { profile: undefined, processes: [], candidates: [{ url }], warnings: [] };
@@ -15,6 +20,10 @@ export async function inspectEdge(options) {
   const profile = await selectProfile(options);
   const result = await edgeProcesses();
   const processes = matchingProcesses(result.processes, profile);
+  if (profile.mode === 'daily') {
+    if (options.port) throw new Error('--port is only for agent-profile launch. Daily Edge uses browser-approved attach.');
+    return { profile, processes, candidates: [], warnings: result.warning ? [result.warning] : [], daily: await inspectDaily(profile, processes, { signal }) };
+  }
   const candidates = [];
   const active = await activePort(profile.root);
   if (active && (!options.port || Number(new URL(active.url).port) === options.port)) candidates.push(active);
@@ -41,25 +50,34 @@ export async function findConnection(inspection, signal) {
 }
 
 export function launchArgs(profile, port) {
+  if (profile.mode === 'daily') throw new Error('Daily Edge is attach-only and must never be launched with debugging switches.');
   const args = ['--remote-debugging-address=127.0.0.1', `--remote-debugging-port=${port || 0}`,
     `--user-data-dir=${profile.root}`];
   if (profile.directory) args.push(`--profile-directory=${profile.directory}`);
   return args;
 }
 
-export const RESTART_HELP = 'Edge is running for this user data directory but verified CDP is unavailable. Save your work and fully exit Edge (including Startup boost/background processes), then retry. The launcher will never kill Edge. If policy or this Edge version blocks debugging the everyday profile, use --isolated or --profile with a separate directory; no silent fallback is performed.';
+export const RESTART_HELP = 'Edge is running for this agent user data directory but verified CDP is unavailable. Save your work and fully exit this agent instance (including background processes), then retry. The launcher will never kill Edge or silently switch profiles.';
 
 export async function prepareEdge(options, { log = () => {}, signal, inspection } = {}) {
   signal?.throwIfAborted();
-  const info = inspection || await inspectEdge(options);
+  const info = inspection || await inspectEdge(options, { signal });
   info.warnings.forEach(log);
+  if (info.wsEndpoint) return { mode: 'ws', wsEndpoint: info.wsEndpoint, reused: true };
+  if (info.profile?.mode === 'daily') {
+    if (options.port) throw new Error('--port is only for agent-profile launch. Daily Edge is attach-only.');
+    const daily = info.daily || await inspectDaily(info.profile, info.processes, { signal });
+    if (daily.state !== 'ready_to_attach') {
+      const error = new Error(dailyMessage(daily.state));
+      error.state = daily.state;
+      throw error;
+    }
+    return { mode: 'daily', profile: info.profile, reused: true, ...daily };
+  }
   const found = await findConnection(info, signal);
   if (found.connection) return { ...found.connection, profile: info.profile, reused: true };
   if (options.browserUrl) throw new Error(`Cannot attach to the requested Edge endpoint: ${found.errors.join('; ')}`);
   if (info.processes.length) throw new Error(`${RESTART_HELP}${found.errors.length ? ` Details: ${found.errors.join('; ')}` : ''}`);
-  if (info.profile.mode === 'daily' && !await exists(info.profile.root)) {
-    throw new Error('Everyday Edge user data directory not found. Open Edge once to set it up, specify --profile, or choose --isolated.');
-  }
   const executable = await findEdge(options.edgePath);
   if (options.port && !await portAvailable(options.port)) throw new Error('Requested port is occupied and was not verified as the selected Edge profile. Choose another --port or omit it.');
   await mkdir(info.profile.root, { recursive: true, mode: 0o700 });

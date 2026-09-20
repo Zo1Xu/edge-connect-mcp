@@ -1,4 +1,4 @@
-import { access, readFile, stat } from 'node:fs/promises';
+import { access, readFile, stat, realpath } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -51,7 +51,7 @@ export async function findEdge(explicit, env = process.env) {
 
 export async function selectProfile(options) {
   const defaults = locations();
-  let root = options.profile ? path.resolve(options.profile) : options.isolated ? defaults.isolated : defaults.daily;
+  let root = options.userDataDir ? path.resolve(options.userDataDir) : options.profile ? path.resolve(options.profile) : options.isolated ? defaults.isolated : defaults.daily;
   let directory = options.profileDirectory;
   if (options.profile && await exists(path.join(root, 'Preferences'))) {
     if (!await exists(path.join(path.dirname(root), 'Local State'))) {
@@ -62,7 +62,21 @@ export async function selectProfile(options) {
     root = path.dirname(root);
   }
   if (await exists(root) && !(await stat(root)).isDirectory()) throw new Error('Profile path is not a directory.');
-  return { root, directory, mode: options.profile ? 'custom' : options.isolated ? 'isolated' : 'daily' };
+  const dailyRoot = await isDailyRoot(root);
+  return { root, directory, mode: options.userDataDir || dailyRoot ? 'daily' : options.profile ? 'custom' : options.isolated ? 'isolated' : 'daily' };
+}
+
+// Explicit --profile and filesystem aliases must not turn a standard Edge root
+// into a launchable agent directory. --user-data-dir is always attach-only.
+export async function isDailyRoot(root, daily = locations().daily) {
+  const roots = [daily];
+  if (process.platform === 'win32') roots.push(...['Edge Beta', 'Edge Dev', 'Edge SxS'].map(name => path.join(path.dirname(path.dirname(daily)), name, 'User Data')));
+  else roots.push(...[' Beta', ' Dev', ' Canary'].map(suffix => process.platform === 'darwin' ? `${daily}${suffix}` : `${daily}-${suffix.trim().toLowerCase()}`));
+  const resolved = await realpath(root).catch(() => path.resolve(root));
+  for (const candidate of roots) {
+    if (samePath(resolved, await realpath(candidate).catch(() => path.resolve(candidate)))) return true;
+  }
+  return false;
 }
 
 // Parse only known switches, without executing or interpreting the command line.
@@ -129,9 +143,17 @@ export function processFlag(item, name) {
 }
 
 export async function activePort(root) {
+  return (await readActivePort(root)).candidate;
+}
+
+export async function readActivePort(root) {
   try {
-    const [number, socketPath] = (await readFile(path.join(root, 'DevToolsActivePort'), 'utf8')).trim().split(/\r?\n/);
-    if (!/^\d+$/.test(number) || +number < 1 || +number > 65535 || !/^\/devtools\/browser\/[\w-]+$/.test(socketPath)) return undefined;
-    return { url: `http://127.0.0.1:${number}`, socketPath };
-  } catch { return undefined; }
+    const file = path.join(root, 'DevToolsActivePort');
+    const metadata = await stat(file);
+    if (metadata.size > 4096) return { state: 'invalid_file' };
+    const lines = (await readFile(file, 'utf8')).trim().split(/\r?\n/);
+    const [number, socketPath] = lines;
+    if (lines.length !== 2 || !/^\d+$/.test(number) || +number < 1 || +number > 65535 || !/^\/devtools\/browser(?:\/[\w-]+)?$/.test(socketPath)) return { state: 'invalid_file' };
+    return { state: 'present', modifiedAt: metadata.mtime.toISOString(), candidate: { url: `http://127.0.0.1:${number}`, socketPath } };
+  } catch (error) { return { state: error.code === 'ENOENT' ? 'missing_file' : 'unreadable_file' }; }
 }

@@ -4,6 +4,7 @@ import { HELP, parseOptions, supportedNode } from '../src/options.js';
 import { prepareEdge, PRIVACY_NOTICE } from '../src/edge.js';
 import { bridge, upstreamCommand } from '../src/upstream.js';
 import { doctor } from '../src/doctor.js';
+import { dailyMessage } from '../src/daily.js';
 
 const controller = new AbortController();
 const abort = () => controller.abort();
@@ -27,8 +28,10 @@ try {
     // Always shown, including first run. Never read a confirmation from MCP stdin.
     process.stderr.write(`${PRIVACY_NOTICE}\n`);
     const edge = await prepareEdge(options, { log, signal: controller.signal });
-    const command = await upstreamCommand(edge.wsEndpoint);
-    log(`${edge.reused ? 'Reusing' : 'Connected to'} verified Microsoft Edge; starting official MCP ${command.version}.`);
+    const command = await upstreamCommand(edge);
+    log(edge.mode === 'daily' ? `${dailyMessage(edge.state)} Official MCP ${command.version} will request authorization on the first browser tool; check Edge for an Allow dialog.`
+      : edge.mode === 'ws' ? `Starting official MCP ${command.version} with the user-selected WebSocket endpoint; browser identity is not preverified.`
+      : `${edge.reused ? 'Reusing' : 'Connected to'} verified Microsoft Edge; starting official MCP ${command.version}.`);
     process.exitCode = await bridge(command, { signal: controller.signal });
   }
 } catch (error) {

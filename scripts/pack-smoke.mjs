@@ -22,19 +22,28 @@ try {
   const manifest = JSON.parse(await readFile(path.join(project, 'package.json'), 'utf8'));
   const [packed] = JSON.parse(await npm(['pack', '--ignore-scripts', '--json', '--pack-destination', root], project));
   const files = packed.files.map(file => file.path);
-  for (const file of ['bin/edge-connect-mcp.js', 'src/cdp.js', 'README.md', 'SECURITY.md', 'LICENSE']) assert.ok(files.includes(file), `Missing ${file}`);
+  assert.ok(manifest.files.every(file => !/[?*]|\/$|(?:^|\/)\.\.(?:\/|$)/.test(file)), 'Package whitelist must contain explicit file paths only');
+  assert.deepEqual([...files].sort(), [...new Set(['package.json', ...manifest.files])].sort(), 'Packed files must exactly match the explicit whitelist');
+  for (const file of ['bin/edge-connect-mcp.js', 'src/cdp.js', 'src/daily.js', 'README.md', 'README.zh-CN.md', 'SECURITY.md', 'SECURITY.zh-CN.md', 'CHANGELOG.md', 'CHANGELOG.zh-CN.md', 'LICENSE']) assert.ok(files.includes(file), `Missing ${file}`);
   assert.ok(files.every(file => !/^(?:node_modules|test|scripts|\.git|\.artifacts|\.test-profile)\//.test(file)), 'Private/development files leaked into package');
   await npm(['install', '--prefix', root, '--ignore-scripts', '--no-audit', '--no-fund', path.join(root, packed.filename)], root);
   const version = await npm(['exec', '--offline', '--', 'edge-connect-mcp', '--version'], root);
   assert.equal(version.trim(), manifest.version);
   const help = await npm(['exec', '--offline', '--', 'edge-connect-mcp', '--help'], root);
   assert.match(help, /--isolated/);
+  assert.match(help, /edge:\/\/inspect\/#remote-debugging/);
+  assert.match(help, /--ws-endpoint/);
   const installed = path.join(root, 'node_modules', manifest.name, 'src', 'upstream.js');
   const { pathToFileURL } = await import('node:url');
   const { upstreamCommand, probeMcp } = await import(pathToFileURL(installed).href);
   const result = await probeMcp(await upstreamCommand('ws://127.0.0.1:1/devtools/browser/pack'));
   assert.ok(result.tools > 0);
+  const daily = await upstreamCommand({ mode: 'daily', profile: { root: path.join(root, 'unused-daily') } });
+  assert.ok(daily.args.includes('--autoConnect'));
+  assert.ok(!daily.args.includes('--wsEndpoint'));
+  assert.ok((await probeMcp(daily)).tools > 0); // handshake only; never request browser authorization
   console.log(`Packed ${packed.files.length} files; installed npm bin, help and official MCP handshake passed.`);
 } finally {
+  if (path.dirname(path.resolve(root)) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith('edge-connect-mcp-pack-')) throw new Error('Refusing cleanup outside the generated pack test directory.');
   await rm(root, { recursive: true, force: true });
 }

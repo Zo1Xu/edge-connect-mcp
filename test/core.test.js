@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { parseOptions, supportedNode } from '../src/options.js';
-import { locations, flag, processFlag, matchingProcesses, activePort, selectProfile, samePath } from '../src/platform.js';
+import { locations, flag, processFlag, matchingProcesses, activePort, selectProfile, samePath, exists } from '../src/platform.js';
 import { localUrl, verifyCdp, portAvailable } from '../src/cdp.js';
 import { launchArgs, prepareEdge, findConnection } from '../src/edge.js';
 
@@ -171,8 +171,8 @@ test('reuse verified endpoint without requiring an executable or launching', asy
 });
 test('running non-debuggable Edge is never killed or silently isolated', async () => {
   await assert.rejects(prepareEdge({ timeout: 100 }, { inspection: {
-    warnings: [], candidates: [], profile: { root: '/daily', mode: 'daily' }, processes: [{ pid: 1 }],
-  } }), /will never kill Edge/);
+    warnings: [], candidates: [], profile: { root: '/daily', mode: 'daily' }, processes: [{ pid: 1 }], daily: { state: 'authorization_required' },
+  } }), /edge:\/\/inspect\/#remote-debugging/);
 });
 test('failed discovery candidates do not mask a subsequent valid endpoint', async t => {
   const url = await endpoint(t);
@@ -199,6 +199,7 @@ test('startup failure is bounded and produces recovery guidance', async t => {
 test('absent everyday profile is not silently created', async t => {
   const root = path.join(await temp(t), 'missing');
   await assert.rejects(prepareEdge({ timeout: 100 }, {
-    inspection: { warnings: [], candidates: [], processes: [], profile: { root, mode: 'daily' } },
-  }), /Everyday Edge user data directory not found/);
+    inspection: { warnings: [], candidates: [], processes: [], profile: { root, mode: 'daily' }, daily: { state: 'authorization_required' } },
+  }), /Start Edge normally/);
+  assert.equal(await exists(root), false);
 });

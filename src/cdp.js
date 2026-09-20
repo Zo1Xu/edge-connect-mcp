@@ -9,7 +9,7 @@ export function localUrl(input, websocket = false) {
     throw new Error('CDP must use a plain loopback URL (127.0.0.1, localhost or [::1]), without credentials, query or fragment.');
   }
   if (!websocket && url.pathname !== '/') throw new Error('CDP browser URL must not contain a path.');
-  if (websocket && !/^\/devtools\/browser\/[\w-]+$/.test(url.pathname)) throw new Error('Invalid browser WebSocket path.');
+  if (websocket && !/^\/devtools\/browser(?:\/[\w-]+)?$/.test(url.pathname)) throw new Error('Invalid browser WebSocket path.');
   // Do not trust hosts-file/DNS mappings of localhost.
   if (url.hostname === 'localhost') url.hostname = '127.0.0.1';
   return url;

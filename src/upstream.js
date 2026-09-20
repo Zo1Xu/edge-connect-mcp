@@ -2,16 +2,19 @@ import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { connectionState, dailyMessage } from './daily.js';
 
 const require = createRequire(import.meta.url);
-export async function upstreamCommand(wsEndpoint) {
+export async function upstreamCommand(connection) {
   const manifestPath = require.resolve('chrome-devtools-mcp/package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
   const bin = typeof manifest.bin === 'string' ? manifest.bin : manifest.bin['chrome-devtools-mcp'];
   if (!bin) throw new Error('Installed chrome-devtools-mcp has no MCP executable. Reinstall dependencies.');
   return {
     executable: process.execPath,
-    args: [path.resolve(path.dirname(manifestPath), bin), '--wsEndpoint', wsEndpoint,
+    args: [path.resolve(path.dirname(manifestPath), bin), ...(connection?.mode === 'daily'
+      ? ['--autoConnect', '--user-data-dir', connection.profile.root]
+      : ['--wsEndpoint', typeof connection === 'string' ? connection : connection.wsEndpoint]),
       '--no-usage-statistics', '--no-performance-crux'],
     version: manifest.version,
   };
@@ -58,12 +61,15 @@ export async function bridge(command, { input = process.stdin, output = process.
 }
 
 // A diagnostic MCP client only. DevTools tools are exclusively implemented upstream.
-export async function probeMcp(command, { connectBrowser = false, timeout = 15000 } = {}) {
+export async function probeMcp(command, { connectBrowser = false, timeout = 15000, authorizationTimeout = 60000, authorization = false, signal, onState = () => {} } = {}) {
+  signal?.throwIfAborted();
   const child = startUpstream(command);
   let buffer = '';
   let nextId = 0;
   let failure;
   const pending = new Map();
+  let protocolReady = false;
+  let toolCount = 0;
   const fail = error => {
     failure = error;
     for (const request of pending.values()) { clearTimeout(request.timer); request.reject(error); }
@@ -90,27 +96,51 @@ export async function probeMcp(command, { connectBrowser = false, timeout = 1500
       else request.resolve(message.result);
     }
   });
-  function rpc(method, params) {
+  const abort = () => fail(signal.reason);
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) abort();
+  function rpc(method, params, wait = timeout) {
     if (failure) return Promise.reject(failure);
     return new Promise((resolve, reject) => {
       const id = ++nextId;
-      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`MCP ${method} timed out.`)); }, timeout);
+      const timer = setTimeout(() => { pending.delete(id); reject(new Error(`MCP ${method} timed out.`)); }, wait);
       pending.set(id, { resolve, reject, timer, method });
       child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
     });
   }
   try {
-    const initialized = await rpc('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'edge-connect-mcp-doctor', version: '0.1.0' } });
+    const initialized = await rpc('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'edge-connect-mcp-doctor', version: '0.1.1' } });
     if (!initialized?.serverInfo || !initialized.protocolVersion) throw new Error('Invalid MCP initialize response.');
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
     const listed = await rpc('tools/list', {});
     if (!Array.isArray(listed?.tools) || !listed.tools.some(tool => tool.name === 'list_pages')) throw new Error('Official MCP did not expose list_pages.');
+    protocolReady = true;
+    toolCount = listed.tools.length;
     if (connectBrowser) {
-      const result = await rpc('tools/call', { name: 'list_pages', arguments: {} });
-      if (!result || result.isError) throw new Error('MCP list_pages failed to connect to Edge. Check browser version, policy, and CDP permissions.');
+      if (authorization) onState('waiting_for_authorization');
+      const result = await rpc('tools/call', { name: 'list_pages', arguments: {} }, authorization ? authorizationTimeout : timeout);
+      if (!result || result.isError) {
+        // Inspect upstream's error chain for classification, never echo page data,
+        // raw socket URLs or stale ports into the diagnostic report.
+        const detail = (result?.content || []).filter(item => item.type === 'text').map(item => item.text).join('\n');
+        const error = new Error('MCP list_pages failed to connect to Edge.');
+        error.state = connectionState(detail);
+        throw error;
+      }
+      if (authorization) onState('connected');
     }
     return { server: initialized.serverInfo.name, tools: listed.tools.length, browserConnected: connectBrowser };
+  } catch (error) {
+    if (protocolReady) {
+      const state = signal?.aborted ? 'cancelled' : error.state || connectionState(error);
+      const failure = new Error(authorization ? dailyMessage(state) : 'MCP list_pages failed to connect to Edge. Check browser version, policy, and CDP permissions.');
+      Object.assign(failure, { state, protocolReady, tools: toolCount });
+      if (authorization) onState(state);
+      throw failure;
+    }
+    throw error;
   } finally {
+    signal?.removeEventListener('abort', abort);
     fail(new Error('Diagnostic client closed.'));
     child.stdin.end();
     child.kill();

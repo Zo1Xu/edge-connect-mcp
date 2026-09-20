@@ -2,82 +2,64 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-Connect MCP clients such as Codex, Claude Code and Cursor to Microsoft Edge through automatic browser discovery and the official [Chrome DevTools MCP server](https://github.com/ChromeDevTools/chrome-devtools-mcp).
+Connect MCP clients to Microsoft Edge through the official [Chrome DevTools MCP server](https://github.com/ChromeDevTools/chrome-devtools-mcp), pinned to **1.9.0**.
 
-The project began with a `nodeRepl.fetch request failed` error while connecting Codex to Edge.
+Daily mode attaches to your existing Edge session after browser authorization. It never launches, restarts or kills daily Edge, and never silently switches to an isolated profile.
 
-Uses your everyday Edge by default, preserving cookies, sessions and extensions. A separate persistent profile is optional.
-
-> **Security:** Agents may access pages, cookies, signed-in sessions and sensitive data. Use trusted clients and `--isolated` when separation is needed. CDP usually has no authentication: keep it local and never expose or forward its port.
+> Agents can access pages and signed-in sessions. Use trusted clients, keep debugging ports local, and read [Security](SECURITY.md).
 
 ## Requirements
 
-- Microsoft Edge Stable.
-- Node.js `^20.19.0 || ^22.12.0 || >=23` + npm.
-- Run the client and Edge on the same desktop system.
+- Edge Stable with `edge://inspect/#remote-debugging`.
+- Node.js `^20.19.0 || ^22.12.0 || >=23` and npm, on the same desktop as Edge.
+- Permission to inspect local processes/listeners; daily mode also needs `lsof` on macOS/Linux.
 
-## Usage
+## Connect daily Edge
 
-### npm
+1. Start Edge normally and open `edge://inspect/#remote-debugging`.
+2. Enable **Allow remote debugging for this browser instance**.
+3. Configure your MCP client, request a browser tool and allow the connection in Edge when prompted.
 
-Connect through `npx`; no clone required.
+Use command `npx` with arguments `["-y", "edge-connect-mcp@latest"]`, or:
 
 ```sh
-# Codex
 codex mcp add edge-agent -- npx -y edge-connect-mcp@latest
-
-# Claude Code
 claude mcp add --transport stdio edge-agent -- npx -y edge-connect-mcp@latest
 ```
 
-For Cursor and other stdio MCP clients, set the command to `npx` and arguments to `["-y", "edge-connect-mcp@latest"]`.
+**0.1.1 is not yet published.** To test this source version, run `npm ci` and configure command `node` with the absolute path to `bin/edge-connect-mcp.js`. npm `@latest` continues to use the published version.
 
-### Source
-
-```sh
-git clone https://github.com/Zo1Xu/edge-connect-mcp.git
-cd edge-connect-mcp
-npm ci
-node bin/edge-connect-mcp.js doctor
-node -p "require('node:path').resolve('bin/edge-connect-mcp.js')"
-```
-
-Replace `<absolute-entry-path>` below with the absolute path printed by the last command.
-
-```sh
-codex mcp add edge-agent -- node "<absolute-entry-path>"
-claude mcp add --transport stdio edge-agent -- node "<absolute-entry-path>"
-```
-
-For Cursor and similar clients, use command `node` and arguments `["<absolute-entry-path>"]`.
+Daily mode delegates to `chrome-devtools-mcp --autoConnect --user-data-dir=<Edge root>`. The upstream server handles authorization; HTTP `/json/version` is not required. `DevToolsActivePort` is only a discovery hint. A successful `list_pages` call confirms the browser connection.
 
 ## Options
 
 | Option | Purpose |
 | --- | --- |
-| None | Prefer everyday Edge; allocate a port automatically when launching. |
-| `--isolated` | Separate persistent user data directory. |
-| `--profile <path>` | Select a user data root or an existing profile subfolder. |
-| `--edge-path <path>` | Select the Edge executable. |
-| `--browser-url <url>` | Attach to a local CDP endpoint. |
-| `--help` | Show all options. |
+| No options | Attach to the default daily Edge after browser authorization. |
+| `--isolated` | Launch/reuse this project's separate **persistent** Agent User Data Dir. |
+| `--user-data-dir <path>` | Attach only to a specified Edge data root; never create or launch it. |
+| `--profile <path>` | Launch/reuse a custom agent directory; standard Edge roots remain attach-only. |
+| `--browser-url <url>` | Advanced: attach to loopback HTTP CDP using `/json/version`. |
+| `--ws-endpoint <url>` | Advanced: connect a user-verified loopback browser WebSocket directly. |
+| `--help` | All options, including executable selection, ports and timeouts. |
 
-Append options to the client arguments, for example:
+A **User Data Dir** contains `Local State`; `Default` and `Profile 1` are **Profile Directories** inside it. Selecting a subprofile does not restrict CDP access to that profile. Custom roots must be identifiable from local process information; otherwise automatic attachment stops.
 
-```sh
-codex mcp add edge-agent -- npx -y edge-connect-mcp@latest --isolated
-```
-
-If Edge is running without CDP, save your work, fully quit Edge including background processes, then retry. The launcher never forces it to close. Use `--isolated` if your Edge version or organization policy restricts debugging the default profile.
+**Lifecycle difference:** `edge-connect-mcp --isolated` retains its Agent Profile across runs. Upstream `chrome-devtools-mcp --isolated` uses a temporary profile cleaned up after browser closure. This wrapper does not forward its `--isolated` flag upstream. Neither mode inherits daily cookies or provides an OS sandbox.
 
 ## Diagnostics
 
+For the local source version:
+
 ```sh
-npx -y edge-connect-mcp@latest doctor
+node bin/edge-connect-mcp.js doctor --json
+node bin/edge-connect-mcp.js doctor --launch --isolated
 ```
 
-Checks Node, Edge, profiles, ports, remote debugging, CDP and MCP. It does not launch Edge by default; add `--launch` to allow startup or `--json` for a JSON report.
+Daily doctor may request authorization. `--launch` permits only agent-profile startup, never daily startup. `--authorization-timeout <ms>` controls doctor's authorization wait (default 60000); `--timeout` controls startup/protocol checks (default 20000).
 
-Edge and CDP may remain running after the client exits. Fully quit that instance and restart normally to disable debugging. Profile subfolders are not security boundaries, and isolated mode is not an OS sandbox. See [Security](SECURITY.md).
+Doctor distinguishes authorization required, waiting, rejected, policy disabled, stale files/no listener and connected. MCP initialization alone is not browser connectivity. For missing authorization, use Edge's Remote debugging page; for managed restrictions, check `edge://policy`. No policy is changed or bypassed.
 
-[MIT License](LICENSE) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md)
+Edge remains open after MCP disconnects. Disable daily debugging in Edge's UI; command-line agent debugging may remain active until that instance is closed.
+
+[Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Releasing](RELEASING.md) · [MIT License](LICENSE)

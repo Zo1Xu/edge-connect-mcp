@@ -1,7 +1,7 @@
 {
   "name": "edge-connect-mcp",
-  "version": "0.1.0",
-  "description": "A local Microsoft Edge launcher and stdio bridge for the official Chrome DevTools MCP server",
+  "version": "0.1.1",
+  "description": "Browser-approved daily Edge attach, persistent agent profiles and a stdio bridge to the official Chrome DevTools MCP server",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -11,7 +11,7 @@
   "homepage": "https://github.com/Zo1Xu/edge-connect-mcp#readme",
   "bugs": { "url": "https://github.com/Zo1Xu/edge-connect-mcp/issues" },
   "bin": { "edge-connect-mcp": "bin/edge-connect-mcp.js" },
-  "files": ["bin/","src/","README.md","SECURITY.md","LICENSE","LICENSE.zh-CN.md","CHANGELOG.md","CONTRIBUTING.md","RELEASING.md","README.zh-CN.md","CONTRIBUTING.zh-CN.md","SECURITY.zh-CN.md","RELEASING.zh-CN.md","CHANGELOG.zh-CN.md"],
+  "files": ["bin/edge-connect-mcp.js","src/cdp.js","src/daily.js","src/doctor.js","src/edge.js","src/options.js","src/platform.js","src/upstream.js","README.md","SECURITY.md","LICENSE","LICENSE.zh-CN.md","CHANGELOG.md","CONTRIBUTING.md","RELEASING.md","README.zh-CN.md","CONTRIBUTING.zh-CN.md","SECURITY.zh-CN.md","RELEASING.zh-CN.md","CHANGELOG.zh-CN.md"],
   "engines": { "node": "^20.19.0 || ^22.12.0 || >=23" },
   "scripts": {
     "test": "node --test",
