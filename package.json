@@ -1,0 +1,26 @@
+{
+  "name": "edge-connect-mcp",
+  "version": "0.1.0",
+  "description": "A local Microsoft Edge launcher and stdio bridge for the official Chrome DevTools MCP server",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zo1Xu/edge-connect-mcp.git"
+  },
+  "homepage": "https://github.com/Zo1Xu/edge-connect-mcp#readme",
+  "bugs": { "url": "https://github.com/Zo1Xu/edge-connect-mcp/issues" },
+  "bin": { "edge-connect-mcp": "bin/edge-connect-mcp.js" },
+  "files": ["bin/", "src/", "README.md", "SECURITY.md", "LICENSE", "LICENSE.zh-CN.md", "CHANGELOG.md", "CONTRIBUTING.md", "RELEASING.md"],
+  "engines": { "node": "^20.19.0 || ^22.12.0 || >=23" },
+  "scripts": {
+    "test": "node --test",
+    "test:pack": "node scripts/pack-smoke.mjs",
+    "test:edge": "node scripts/edge-smoke.mjs",
+    "check": "node scripts/check.mjs",
+    "prepack": "npm run check && npm test"
+  },
+  "dependencies": { "chrome-devtools-mcp": "1.9.0" },
+  "keywords": ["mcp", "edge", "microsoft-edge", "devtools", "cdp", "codex", "claude", "cursor"],
+  "publishConfig": { "access": "public" }
+}

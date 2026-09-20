@@ -1,0 +1,12 @@
+# MIT 许可证中文参考 / MIT license Chinese reference
+
+本文件仅供理解，[英文 LICENSE](LICENSE) 为本项目的正式许可文本。两者有差异时以英文为准。
+This translation is for reference only. The [English LICENSE](LICENSE) is the authoritative license text; it controls if the texts differ.
+
+版权所有 (c) 2026 edge-connect-mcp contributors
+
+特此免费授予任何获得本软件及相关文档文件（以下简称“软件”）副本的人，不受限制地处理软件的权利，包括但不限于使用、复制、修改、合并、发布、分发、再许可和/或销售软件副本的权利，以及允许获得软件的人享有上述权利，但须遵守以下条件：
+
+上述版权声明和本许可声明应包含在软件的所有副本或实质部分中。
+
+本软件按“原样”提供，不提供任何明示或默示的保证，包括但不限于适销性、特定用途适用性和不侵权的保证。在任何情况下，作者或版权持有人均不对因本软件、使用本软件或与本软件有关的其他交易所产生、引起或相关的任何索赔、损害或其他责任承担责任，无论其基于合同、侵权或其他法律依据。

@@ -1,0 +1,9 @@
+node_modules/
+*.tgz
+coverage/
+.artifacts/
+.test-profile/
+*.log
+.env
+.env.*
+!.env.example
