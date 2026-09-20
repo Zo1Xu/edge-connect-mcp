@@ -11,7 +11,7 @@
   "homepage": "https://github.com/Zo1Xu/edge-connect-mcp#readme",
   "bugs": { "url": "https://github.com/Zo1Xu/edge-connect-mcp/issues" },
   "bin": { "edge-connect-mcp": "bin/edge-connect-mcp.js" },
-  "files": ["bin/", "src/", "README.md", "SECURITY.md", "LICENSE", "LICENSE.zh-CN.md", "CHANGELOG.md", "CONTRIBUTING.md", "RELEASING.md"],
+  "files": ["bin/","src/","README.md","SECURITY.md","LICENSE","LICENSE.zh-CN.md","CHANGELOG.md","CONTRIBUTING.md","RELEASING.md","README.zh-CN.md","CONTRIBUTING.zh-CN.md","SECURITY.zh-CN.md","RELEASING.zh-CN.md","CHANGELOG.zh-CN.md"],
   "engines": { "node": "^20.19.0 || ^22.12.0 || >=23" },
   "scripts": {
     "test": "node --test",

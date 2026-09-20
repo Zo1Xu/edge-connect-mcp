@@ -1,36 +1,29 @@
-# 安全政策 / Security policy
+# Security policy
 
-## 支持范围 / Supported versions
+**English** | [简体中文](SECURITY.zh-CN.md)
 
-安全修复面向最新版本。目前 `edge-connect-mcp` 0.1.0 尚未发布到 npm；首次发布前可使用 GitHub 源码。
+## Supported versions
+
 Security fixes target the latest version. `edge-connect-mcp` 0.1.0 is not yet published on npm; use the GitHub source until the first release.
 
-## 信任边界 / Trust boundary
+## Trust boundary
 
-默认模式连接日常 Edge 用户目录。获得授权的 MCP 客户端和 Agent 可以读取页面、检查网络请求、执行页面脚本，并借助登录会话操作网站；Cookie、扩展和其他敏感状态也可能暴露。页面内容不可信，可能包含提示注入。只使用可信客户端，并在客户端审阅重要操作。
 The default mode connects to your everyday Edge user data directory. Authorized MCP clients and agents can read pages, inspect network requests, run page JavaScript and act using signed-in sessions. Cookies, extensions and other sensitive state may also be exposed. Page content is untrusted and may contain prompt injection. Use trusted clients and review consequential actions in those clients.
 
-`--isolated` 使用独立、持久化用户目录，不提供操作系统沙箱。该目录中登录的账号仍可被 Agent 使用。单个 Profile 子目录也不是安全边界：CDP 可能访问同一浏览器进程中的其他 Profile。
 `--isolated` uses a separate persistent user data directory, not an OS sandbox. Accounts signed into it remain accessible to agents. A profile subfolder is not a security boundary: CDP may expose other profiles in the same browser process.
 
-## CDP 与浏览器生命周期 / CDP and browser lifecycle
+## CDP and browser lifecycle
 
-CDP 通常没有身份认证。启动器绑定回环地址，拒绝非回环端点及 HTTP 重定向，验证浏览器 WebSocket 地址后将其传给官方 MCP。`localhost` 会转换为数字回环地址。这些检查防止误连，无法阻止同机恶意进程冒充服务；Edge 身份字段是服务自行报告的。不要转发或公开 CDP 端口。
 CDP usually has no authentication. The launcher binds to loopback, rejects non-loopback endpoints and HTTP redirects, validates the browser WebSocket address and passes it to the official MCP. `localhost` is normalized to a numeric loopback address. These checks prevent accidental connections, not impersonation by a malicious local process; Edge identity fields are self-reported. Never forward or publicly expose CDP ports.
 
-对于手动启动的浏览器，用户还需保证监听器没有绑定其他网卡。使用回环 URL 连接无法证明现有服务仅监听回环；同机进程仍可能访问 CDP 和用户数据。
 For a manually started browser, ensure its listener is not exposed on another interface. A loopback connection cannot prove an existing service listens exclusively on loopback; local processes may still access CDP and user data.
 
-MCP 客户端退出后浏览器保持打开，调试接口可能继续可用。停用调试时完全退出对应 Edge，再正常启动。启动器不会强制结束现有浏览器、复制 Cookie、删除 Profile 或绕过组织策略。
 Browsers remain open after the MCP client disconnects, and CDP may remain accessible. Fully quit the relevant Edge instance and restart normally to disable debugging. The launcher never kills an existing browser, copies cookies, deletes profiles or bypasses organizational policy.
 
-官方 MCP 的使用统计、CrUX 查询及更新检查默认关闭。Edge 遥测和 AI 服务的数据处理由各自设置控制。诊断报告不输出页面内容，但错误或日志可能包含本地路径；分享前请脱敏。
 Official MCP usage statistics, CrUX requests and update checks are disabled by default. Edge telemetry and AI-provider data handling are controlled separately. Reports omit page contents, but errors or logs may contain local paths; redact them before sharing.
 
-## 漏洞报告 / Reporting vulnerabilities
+## Reporting vulnerabilities
 
-请通过 [GitHub 私密漏洞报告](https://github.com/Zo1Xu/edge-connect-mcp/security/advisories/new) 联系维护者，不要在公开 Issue 中披露漏洞细节、凭据、CDP WebSocket 地址或浏览器数据。
 Use [GitHub private vulnerability reporting](https://github.com/Zo1Xu/edge-connect-mcp/security/advisories/new). Do not disclose exploit details, credentials, CDP WebSocket URLs or browsing data in public issues.
 
-提供包版本、Node/Edge 版本、操作系统、使用全新测试 Profile 的复现步骤、影响与建议修复。不要附真实 Cookie 或令牌。上游问题也应通过 [官方安全政策](https://github.com/ChromeDevTools/chrome-devtools-mcp/security/policy) 中的渠道报告。
 Include package, Node and Edge versions, OS, reproduction using a fresh test profile, impact and suggested mitigation. Never include real cookies or tokens. Report upstream issues through the [official upstream security policy](https://github.com/ChromeDevTools/chrome-devtools-mcp/security/policy) as well.

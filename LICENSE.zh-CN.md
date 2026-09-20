@@ -1,7 +1,8 @@
-# MIT 许可证中文参考 / MIT license Chinese reference
+# MIT 许可证中文参考
+
+[English](LICENSE) | **简体中文**
 
 本文件仅供理解，[英文 LICENSE](LICENSE) 为本项目的正式许可文本。两者有差异时以英文为准。
-This translation is for reference only. The [English LICENSE](LICENSE) is the authoritative license text; it controls if the texts differ.
 
 版权所有 (c) 2026 edge-connect-mcp contributors
 
