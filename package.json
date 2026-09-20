@@ -22,5 +22,5 @@
   },
   "dependencies": { "chrome-devtools-mcp": "1.9.0" },
   "keywords": ["mcp", "edge", "microsoft-edge", "devtools", "cdp", "codex", "claude", "cursor"],
-  "publishConfig": { "access": "public" }
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org" }
 }

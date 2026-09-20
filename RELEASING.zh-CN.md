@@ -2,9 +2,9 @@
 
 [English](RELEASING.md) | **简体中文**
 
-源码仓库：[Zo1Xu/edge-connect-mcp](https://github.com/Zo1Xu/edge-connect-mcp)。目前尚未发布到 npm；包名查询未发现同名公开包，但名称在成功发布前不会被预留。
+源码仓库：[Zo1Xu/edge-connect-mcp](https://github.com/Zo1Xu/edge-connect-mcp)。npm 包：[edge-connect-mcp](https://www.npmjs.com/package/edge-connect-mcp)。每次发布前核对包的所有权和版本可用性。
 
-1. 确认 `edge-connect-mcp` 名称仍可用，且你的 npm 账号有发布权限。若改用 scope，同步修改 package.json、lockfile 和文档。
+1. 确认包的所有权、npm 账号发布权限，以及该版本尚未发布。若改用 scope，同步修改 package.json、lockfile 和文档。
 
 2. 核对 package.json 的 `repository`、`homepage`、`bugs` 地址，以及 MIT 许可和版权署名。确认私密漏洞报告可用，并考虑为主分支配置 CI 保护。
 
@@ -25,8 +25,8 @@
 6. 登录 npm，核对账号和包名后发布。根据账号要求配置双因素认证或可信发布。当前没有自动发布工作流。
 
    ```sh
-   npm login
-   npm publish --access public
+   npm login --registry=https://registry.npmjs.org
+   npm publish --access public --registry=https://registry.npmjs.org
    ```
 
 7. 在干净目录验证下列命令，并用真实 MCP 客户端测试安装。

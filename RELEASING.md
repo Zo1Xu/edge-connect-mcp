@@ -2,9 +2,9 @@
 
 **English** | [简体中文](RELEASING.zh-CN.md)
 
-Source repository: [Zo1Xu/edge-connect-mcp](https://github.com/Zo1Xu/edge-connect-mcp). The package is not yet published on npm. Registry checks found no public package under this name, but the name is not reserved until publication succeeds.
+Source repository: [Zo1Xu/edge-connect-mcp](https://github.com/Zo1Xu/edge-connect-mcp). npm package: [edge-connect-mcp](https://www.npmjs.com/package/edge-connect-mcp). Verify package ownership and version availability before each release.
 
-1. Verify name availability and npm publishing permissions. If switching to a scoped name, update package.json, the lockfile and documentation.
+1. Verify package ownership, npm publishing permissions and that the version has not already been published. If switching to a scoped name, update package.json, the lockfile and documentation.
 
 2. Verify `repository`, `homepage`, `bugs`, the MIT license and attribution. Confirm private vulnerability reporting works and consider protecting the default branch with required CI checks.
 
@@ -25,8 +25,8 @@ Source repository: [Zo1Xu/edge-connect-mcp](https://github.com/Zo1Xu/edge-connec
 6. Sign in to npm, verify the account and package name, then publish. Configure two-factor authentication or trusted publishing as required by the account. No automatic publishing workflow is configured.
 
    ```sh
-   npm login
-   npm publish --access public
+   npm login --registry=https://registry.npmjs.org
+   npm publish --access public --registry=https://registry.npmjs.org
    ```
 
 7. Verify the following commands in a clean directory and test installation with a real MCP client.

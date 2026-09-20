@@ -4,7 +4,7 @@
 
 ## Supported versions
 
-Security fixes target the latest version. `edge-connect-mcp` 0.1.0 is not yet published on npm; use the GitHub source until the first release.
+Security fixes target the latest release of `edge-connect-mcp`. Upgrade to the latest version when reporting a vulnerability.
 
 ## Trust boundary
 

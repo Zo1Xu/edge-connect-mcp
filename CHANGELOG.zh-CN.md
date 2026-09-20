@@ -2,7 +2,7 @@
 
 [English](CHANGELOG.md) | **简体中文**
 
-## 0.1.0 — 尚未发布到 npm
+## 0.1.0 — 2026-09-20
 
 - 项目、npm 包、CLI 和隔离目录统一命名为 `edge-connect-mcp`。
 - 跨平台发现 Edge Stable，优先连接日常 Profile。

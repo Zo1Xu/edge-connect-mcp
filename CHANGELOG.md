@@ -2,7 +2,7 @@
 
 **English** | [简体中文](CHANGELOG.zh-CN.md)
 
-## 0.1.0 — Unreleased on npm
+## 0.1.0 — 2026-09-20
 
 - Project, npm package, CLI and isolated directory named `edge-connect-mcp`.
 - Cross-platform Edge Stable discovery with everyday-profile-first connection.
