@@ -2,6 +2,8 @@
 
 [English](SECURITY.md) | **简体中文**
 
+当前支持版本：**0.1.1**。
+
 安全修复面向最新版本。通过 [GitHub 私密报告](https://github.com/Zo1Xu/edge-connect-mcp/security/advisories/new) 报告漏洞；上游问题参照其[安全政策](https://github.com/ChromeDevTools/chrome-devtools-mcp/security/policy)。
 
 ## 浏览器权限

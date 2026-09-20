@@ -27,7 +27,7 @@ codex mcp add edge-agent -- npx -y edge-connect-mcp@latest
 claude mcp add --transport stdio edge-agent -- npx -y edge-connect-mcp@latest
 ```
 
-**0.1.1 尚未发布。** 验收本地源码请先运行 `npm ci`，将客户端命令设为 `node`，参数设为 `bin/edge-connect-mcp.js` 的绝对路径。npm `@latest` 仍指向已发布版本。
+使用源码请先运行 `npm ci`，将客户端命令设为 `node`，参数设为 `bin/edge-connect-mcp.js` 的绝对路径。
 
 daily 委托 `chrome-devtools-mcp --autoConnect --user-data-dir=<Edge 根目录>` 连接，授权由上游处理，不强制依赖 HTTP `/json/version`。`DevToolsActivePort` 只是发现线索；`list_pages` 成功才确认浏览器连通。
 

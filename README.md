@@ -27,7 +27,7 @@ codex mcp add edge-agent -- npx -y edge-connect-mcp@latest
 claude mcp add --transport stdio edge-agent -- npx -y edge-connect-mcp@latest
 ```
 
-**0.1.1 is not yet published.** To test this source version, run `npm ci` and configure command `node` with the absolute path to `bin/edge-connect-mcp.js`. npm `@latest` continues to use the published version.
+To run from source, use `npm ci` and configure command `node` with the absolute path to `bin/edge-connect-mcp.js`.
 
 Daily mode delegates to `chrome-devtools-mcp --autoConnect --user-data-dir=<Edge root>`. The upstream server handles authorization; HTTP `/json/version` is not required. `DevToolsActivePort` is only a discovery hint. A successful `list_pages` call confirms the browser connection.
 

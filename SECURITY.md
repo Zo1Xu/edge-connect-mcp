@@ -2,6 +2,8 @@
 
 **English** | [简体中文](SECURITY.zh-CN.md)
 
+Supported release: **0.1.1**.
+
 Security fixes target the latest release. Report vulnerabilities through [GitHub private reporting](https://github.com/Zo1Xu/edge-connect-mcp/security/advisories/new); report upstream issues through its [security policy](https://github.com/ChromeDevTools/chrome-devtools-mcp/security/policy).
 
 ## Browser access

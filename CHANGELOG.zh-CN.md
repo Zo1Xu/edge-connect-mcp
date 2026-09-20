@@ -2,7 +2,7 @@
 
 [English](CHANGELOG.md) | **简体中文**
 
-## 0.1.1 — 未发布
+## 0.1.1 — 2026-09-20
 
 - daily 改为只连接：用户在 Edge 内开启调试，固定上游 MCP 1.9.0 使用 `--autoConnect --user-data-dir`；即使 `doctor --launch` 也不启动/重启 daily，不回退 isolated。
 - DevToolsActivePort 仅作发现线索；核对监听与本机 Edge 进程归属，授权模式不再强制依赖 HTTP `/json/version`。
